@@ -62,10 +62,10 @@ static int SaveBitmapImageToPVR(NSBitmapImageRep *bitmapImage, NSString *outPath
 		uint width = bitmapImage.size.width;
 		uint height = bitmapImage.size.height;
 		unsigned char *pPixelData = bitmapImage.bitmapData;
-		        
+
 		// get the utilities instance
 		PVRTextureUtilities sPVRU = PVRTextureUtilities();
-        PVRTextureUtilities *PVRU = &sPVRU;
+		PVRTextureUtilities *PVRU = &sPVRU;
 		// make a CPVRTexture instance with data passed
 		CPVRTexture sOriginalTexture(
 									 width,		// u32Width
@@ -93,58 +93,58 @@ static int SaveBitmapImageToPVR(NSBitmapImageRep *bitmapImage, NSString *outPath
 							0.0f,			//fBleedRed
 							0.0f,			//fBleedGreen
 							0.0f,			//fBleedBlue
-//NOTE: Although we do want the alpha output premultiplied, the NSBitmapImageRep is already premultiplied							
+//NOTE: Although we do want the alpha output premultiplied, the NSBitmapImageRep is already premultiplied
 							false,			//bPremultAlpha
 							eRESIZE_BICUBIC	//eResizeMode
 							);
-		
+
 		// create texture to encode to
 		CPVRTexture sCompressedTexture(sOriginalTexture.getHeader());
-        
-        pvrtexlib::PixelType pixel_format = OGL_RGBA_8888;
-        
-        if (g_pixelFormat == 1){
-            pixel_format = OGL_PVRTC2;
-            NSLog(@"using pixel format OGL_PVRTC2");
-        }
-        else if(g_pixelFormat == 2){
-            pixel_format = OGL_PVRTC4;
-            NSLog(@"using pixel format OGL_PVRTC4");
-        }
-        else if(g_pixelFormat == 3){
-            pixel_format = OGL_RGBA_8888;
-            NSLog(@"using pixel format OGL_RGBA_8888");
-        }
-        else if(g_pixelFormat == 4){
-            pixel_format = OGL_RGBA_4444;
-            NSLog(@"using pixel format OGL_RGBA_4444");
-        }
-        else if(g_pixelFormat == 5){
-            pixel_format = OGL_RGBA_5551;
-            NSLog(@"using pixel format OGL_RGBA_5551");
-        }
-        else if(g_pixelFormat == 6){
-            pixel_format = OGL_RGB_565;
-            NSLog(@"using pixel format OGL_RGB_565");
-        }
-        else{
-            pixel_format = OGL_RGBA_8888;
-            NSLog(@"using default pixel format OGL_RGBA_8888");
-        }
-        
+
+		pvrtexlib::PixelType pixel_format = OGL_RGBA_8888;
+
+		if (g_pixelFormat == 1){
+			pixel_format = OGL_PVRTC2;
+			NSLog(@"using pixel format OGL_PVRTC2");
+		}
+		else if(g_pixelFormat == 2){
+			pixel_format = OGL_PVRTC4;
+			NSLog(@"using pixel format OGL_PVRTC4");
+		}
+		else if(g_pixelFormat == 3){
+			pixel_format = OGL_RGBA_8888;
+			NSLog(@"using pixel format OGL_RGBA_8888");
+		}
+		else if(g_pixelFormat == 4){
+			pixel_format = OGL_RGBA_4444;
+			NSLog(@"using pixel format OGL_RGBA_4444");
+		}
+		else if(g_pixelFormat == 5){
+			pixel_format = OGL_RGBA_5551;
+			NSLog(@"using pixel format OGL_RGBA_5551");
+		}
+		else if(g_pixelFormat == 6){
+			pixel_format = OGL_RGB_565;
+			NSLog(@"using pixel format OGL_RGB_565");
+		}
+		else{
+			pixel_format = OGL_RGBA_8888;
+			NSLog(@"using default pixel format OGL_RGBA_8888");
+		}
+
 		sCompressedTexture.setPixelType(pixel_format);
-		
+
 		PVRU->CompressPVR(sOriginalTexture,sCompressedTexture);
-		
+
 		// write to file specified (second param is version. Current is 2.)
 		size_t writeResult = sCompressedTexture.writeToFile([[NSFileManager defaultManager] fileSystemRepresentationWithPath:outPath]);
 		NSLog(@"PVR wrote %d bytes to %@", writeResult, [outPath lastPathComponent]);
-		
+
 		return 1;
 	} PVRCATCH(myException) {
 		// handle any exceptions here
 		printf("Exception in example 2: %s\n",myException.what());
-		
+
 		return -1;
 	}
 }
@@ -154,84 +154,84 @@ static NSBitmapImageRep *BitmapImageRepFromNSImage(NSImage *nsImage);
 static unsigned int nextPOT(unsigned int x)
 {
 	if(x < 3)return 2;
-    x = x - 1;
-    x = x | (x >> 1);
-    x = x | (x >> 2);
-    x = x | (x >> 4);
-    x = x | (x >> 8);
-    x = x | (x >>16);
-    return x + 1;
+	x = x - 1;
+	x = x | (x >> 1);
+	x = x | (x >> 2);
+	x = x | (x >> 4);
+	x = x | (x >> 8);
+	x = x | (x >>16);
+	return x + 1;
 }
 
 static NSBitmapImageRep *BitmapImageRepFromNSImage(NSImage *nsImage) {
-    // See if the NSImage has an NSBitmapImageRep.  If so, return the first NSBitmapImageRep encountered.  An NSImage that is initialized by loading the contents of a bitmap image file (such as JPEG, TIFF, or PNG) and, not subsequently rescaled, will usually have a single NSBitmapImageRep.
-    NSEnumerator *enumerator = [[nsImage representations] objectEnumerator];
-    NSImageRep *representation;
-    while (representation = [enumerator nextObject]) {
-        if ([representation isKindOfClass:[NSBitmapImageRep class]]) {
-            return (NSBitmapImageRep *)representation;
-        }
-    }
-	
-    // If we didn't find an NSBitmapImageRep (perhaps because we received a PDF image), we can create one using one of two approaches: (1) lock focus on the NSImage, and create the bitmap using -[NSBitmapImageRep initWithFocusedViewRect:], or (2) (Tiger and later) create an NSBitmapImageRep, and an NSGraphicsContext that draws into it using +[NSGraphicsContext graphicsContextWithBitmapImageRep:], and composite the NSImage into the bitmap graphics context.  We'll use approach (1) here, since it is simple and supported on all versions of Mac OS X.
-    NSSize size = [nsImage size];
-    [nsImage lockFocus];
-    NSBitmapImageRep *bitmapImageRep = [[NSBitmapImageRep alloc] initWithFocusedViewRect:NSMakeRect(0, 0, size.width, size.height)];
-    [nsImage unlockFocus];
-	
-    return [bitmapImageRep autorelease];
+	// See if the NSImage has an NSBitmapImageRep.  If so, return the first NSBitmapImageRep encountered.  An NSImage that is initialized by loading the contents of a bitmap image file (such as JPEG, TIFF, or PNG) and, not subsequently rescaled, will usually have a single NSBitmapImageRep.
+	NSEnumerator *enumerator = [[nsImage representations] objectEnumerator];
+	NSImageRep *representation;
+	while (representation = [enumerator nextObject]) {
+		if ([representation isKindOfClass:[NSBitmapImageRep class]]) {
+			return (NSBitmapImageRep *)representation;
+		}
+	}
+
+	// If we didn't find an NSBitmapImageRep (perhaps because we received a PDF image), we can create one using one of two approaches: (1) lock focus on the NSImage, and create the bitmap using -[NSBitmapImageRep initWithFocusedViewRect:], or (2) (Tiger and later) create an NSBitmapImageRep, and an NSGraphicsContext that draws into it using +[NSGraphicsContext graphicsContextWithBitmapImageRep:], and composite the NSImage into the bitmap graphics context.  We'll use approach (1) here, since it is simple and supported on all versions of Mac OS X.
+	NSSize size = [nsImage size];
+	[nsImage lockFocus];
+	NSBitmapImageRep *bitmapImageRep = [[NSBitmapImageRep alloc] initWithFocusedViewRect:NSMakeRect(0, 0, size.width, size.height)];
+	[nsImage unlockFocus];
+
+	return [bitmapImageRep autorelease];
 }
 
 NSBitmapImageRep *outputBitmapImageRepFromCIImage(CIImage *ciImage)
 {
-    NSBitmapImageRep *bitmapImageRep = nil;
-	
-    if (ciImage != nil) {
-		
-        // Get the CIImage's extents.  The filters we're using in this example should always produce an output image of finite extent, but in the general case one needs to account for the possibility of the output image being infinite in extent.
-        CGRect extent = [ciImage extent];
-        if (CGRectIsInfinite(extent)) {
-            extent.size.width = 1024;
-            extent.size.height = 1024;
-            NSLog(@"Trimmed infinite rect to arbitrary finite rect");
-        }
-		
+	NSBitmapImageRep *bitmapImageRep = nil;
+
+	if (ciImage != nil) {
+
+		// Get the CIImage's extents.  The filters we're using in this example should always produce an output image of finite extent, but in the general case one needs to account for the possibility of the output image being infinite in extent.
+		CGRect extent = [ciImage extent];
+		if (CGRectIsInfinite(extent)) {
+			extent.size.width = 1024;
+			extent.size.height = 1024;
+			NSLog(@"Trimmed infinite rect to arbitrary finite rect");
+		}
+
 		unsigned int POTWide	= nextPOT(extent.size.width);
 		unsigned int POTHigh	= nextPOT(extent.size.height);
 		unsigned int imgWide	= extent.size.width;
 		unsigned int imgHigh	= extent.size.height;
-		
-        // Compute size of output bitmap.
-        NSSize outputBitmapSize = NSMakeSize(POTWide, POTHigh);
-		
-        // Create a new NSBitmapImageRep that matches the CIImage's extents.
-        bitmapImageRep = [[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL pixelsWide:outputBitmapSize.width pixelsHigh:outputBitmapSize.height bitsPerSample:8 samplesPerPixel:4 hasAlpha:YES isPlanar:NO colorSpaceName:NSDeviceRGBColorSpace bytesPerRow:0 bitsPerPixel:0];
-		
-        // Create an NSGraphicsContext that draws into the NSBitmapImageRep, and make it current.
-        NSGraphicsContext *nsContext = [NSGraphicsContext graphicsContextWithBitmapImageRep:bitmapImageRep];
-        [NSGraphicsContext saveGraphicsState];
-        [NSGraphicsContext setCurrentContext:nsContext];
-		
-        // Clear the bitmap to zero alpha.
-        [[NSColor clearColor] set];
-        NSRectFill(NSMakeRect(0, 0, [bitmapImageRep pixelsWide], [bitmapImageRep pixelsHigh]));
-		
-        // Decide where the image will go.
-        CGRect imageDestinationRect = CGRectMake(0.0, [bitmapImageRep pixelsHigh] - extent.size.height, extent.size.width, extent.size.height);
-		
-        // Get a CIContext from the NSGraphicsContext, and use it to draw the CIImage into the NSBitmapImageRep.
-        CIContext *ciContext = [nsContext CIContext];
-        [ciContext drawImage:ciImage atPoint:imageDestinationRect.origin fromRect:extent];
-		
+
+		// Compute size of output bitmap.
+		NSSize outputBitmapSize = NSMakeSize(POTWide, POTHigh);
+
+		// Create a new NSBitmapImageRep that matches the CIImage's extents.
+		bitmapImageRep = [[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL pixelsWide:outputBitmapSize.width pixelsHigh:outputBitmapSize.height bitsPerSample:8 samplesPerPixel:4 hasAlpha:YES isPlanar:NO colorSpaceName:NSDeviceRGBColorSpace bytesPerRow:0 bitsPerPixel:0];
+
+		// Create an NSGraphicsContext that draws into the NSBitmapImageRep, and make it current.
+		NSGraphicsContext *nsContext = [NSGraphicsContext graphicsContextWithBitmapImageRep:bitmapImageRep];
+		[NSGraphicsContext saveGraphicsState];
+		[NSGraphicsContext setCurrentContext:nsContext];
+
+		// Clear the bitmap to zero alpha.
+		[[NSColor clearColor] set];
+		NSRectFill(NSMakeRect(0, 0, [bitmapImageRep pixelsWide], [bitmapImageRep pixelsHigh]));
+
+		// Decide where the image will go.
+		CGRect imageDestinationRect = CGRectMake(0.0, [bitmapImageRep pixelsHigh] - extent.size.height, extent.size.width, extent.size.height);
+
+		// Get a CIContext from the NSGraphicsContext, and use it to draw the CIImage into the NSBitmapImageRep.
+		CIContext *ciContext = [nsContext CIContext];
+		[ciContext drawImage:ciImage atPoint:imageDestinationRect.origin fromRect:extent];
+
 		// Restore the previous NSGraphicsContext.
-        [NSGraphicsContext restoreGraphicsState];
-		
+		[NSGraphicsContext restoreGraphicsState];
+
 		//Fill the expanded area by repeating the edge pixel out to the new edge
 		{
 			int x, y;
-			
+
 			NSColor *fillColor;
-			
+
 			//fill right
 			if(imgWide < POTWide){
 				unsigned int startX = imgWide-1;
@@ -242,7 +242,7 @@ NSBitmapImageRep *outputBitmapImageRepFromCIImage(CIImage *ciImage)
 					}
 				}
 			}
-			
+
 			//fill down
 			if(imgHigh < POTHigh){
 				unsigned int startY = imgHigh-1;
@@ -254,14 +254,14 @@ NSBitmapImageRep *outputBitmapImageRepFromCIImage(CIImage *ciImage)
 				}
 			}
 		}
-    }
-	
-    // Return the new NSBitmapImageRep.
-    return [bitmapImageRep autorelease];
+	}
+
+	// Return the new NSBitmapImageRep.
+	return [bitmapImageRep autorelease];
 }
 
 int padImageFilePOT(NSString *filePath)
-{		
+{
 	NSArray *filesToSkip = [NSArray arrayWithObjects:
 							@"iTunesArtwork",
 							@"Default.png",
@@ -279,37 +279,37 @@ int padImageFilePOT(NSString *filePath)
 			return 0;
 		}
 	}
-	
+
 	NSBitmapImageRep *inputBitmapImageRep	= BitmapImageRepFromNSImage([[[NSImage alloc] initWithContentsOfFile:filePath] autorelease]);
 	CIImage *image							= [[[CIImage alloc] initWithBitmapImageRep:inputBitmapImageRep] autorelease];
 	if(!image){
 		NSLog(@"Failed to load image %@", filePath);
 		return 0;
 	}
-	
+
 	NSBitmapImageRep *outputBitmapImageRep	= outputBitmapImageRepFromCIImage(image);
 	if(!outputBitmapImageRep){
 		NSLog(@"Didn't expand image size %@", filePath);
 		return 0;
 	}
-	
+
 	NSString *pvrPath	= [[filePath stringByDeletingPathExtension] stringByAppendingPathExtension:@"pvr"];
 	int result = SaveBitmapImageToPVR(outputBitmapImageRep, pvrPath);
 	if(result < 1){
 		NSLog(@"Failed to save PVR %@", pvrPath);
 		return 0;
 	}
-	
+
 	NSData *data			= [[NSData alloc] initWithContentsOfFile:pvrPath];
-#if REMOTE_TMP_FILE	
-	//remove pvr temp file	
+#if REMOTE_TMP_FILE
+	//remove pvr temp file
 	NSError *saveError;
 	if(![[NSFileManager defaultManager] removeItemAtPath:pvrPath error:&saveError])
 	{
 		NSLog(@"Failed to cleanup temp pvr: %@", pvrPath);
 	}
 #endif
-	
+
 	if(data){
 		const unsigned char *d = (const unsigned char *)[data bytes];   
 		if(!d){
@@ -317,24 +317,24 @@ int padImageFilePOT(NSString *filePath)
 			[data release];
 			data = nil;
 		}
-		
+
 		struct CCZHeader *header;
 		uint32 headerSize	= sizeof(*header);
 		NSLog(@"Header size %d", headerSize);
-		
+
 		uLongf sourceLen	= [data length];
 		uLongf destLen		= compressBound(sourceLen);
-		
+
 		NSMutableData *compressed = [[NSMutableData alloc] initWithLength:destLen + headerSize];
 		if(!compressed){
 			NSLog(@"Failed to allocate memory for compressed data");
 			[data release];
 			data = nil;
 		}
-		
+
 		Bytef *md = (Bytef *)[compressed mutableBytes];
 		md += headerSize;
-		
+
 		if(Z_OK != compress2(md, &destLen, d, sourceLen, Z_BEST_COMPRESSION)){
 			NSLog(@"Failed to allocate memory for compressed data");
 			[compressed release];
@@ -342,33 +342,33 @@ int padImageFilePOT(NSString *filePath)
 			[data release];
 			data = nil;
 		}
-		
+
 		md -= headerSize;
-		
+
 		NSLog(@"Compressed size w/o header %d, full orig %d, Temp byte size %d", destLen, sourceLen, [compressed length]);
-		
+
 		compressed.length = destLen+headerSize;
-		
+
 		header = (struct CCZHeader*) md;
 		header->sig[0] = 'C';
 		header->sig[1] = 'C';
 		header->sig[2] = 'Z';
 		header->sig[3] = '!';
-#if DEBUG		
+#if DEBUG
 		char c[5];
 		c[0]	= header->sig[0];
 		c[1]	= header->sig[1];
 		c[2]	= header->sig[2];
 		c[3]	= header->sig[3];
 		c[4]	= '\0';
-		
+
 		if(header->sig[0] != 'C' || header->sig[1] != 'C' || header->sig[2] != 'Z' || header->sig[3] != '!'){
 			NSLog(@"cocos2d: Invalid CCZ file");
 		}else{
 			NSLog(@"CCZ Header: %@", [NSString stringWithCString:c encoding:NSASCIIStringEncoding]);
 		}
-#endif	
-                
+#endif
+
 		uint32_t myFlags			= 0;
 		myFlags						|= 0x1;//First flag means should parse flag
 		myFlags						|= 0x2;//Second flag means alpha premultiplied
@@ -376,22 +376,22 @@ int padImageFilePOT(NSString *filePath)
 		header->version				= OSSwapHostToBigInt16(2);
 		header->compression_type	= OSSwapHostToBigInt16(CCZ_COMPRESSION_ZLIB);
 		header->reserved			= OSSwapHostToBigInt32(myFlags);
-		
+
 		[data release];
 		data = compressed;
 		compressed = nil;
 	}
-	
+
 	//Save PNG
 	//NSData *data					= [[outputBitmapImageRep representationUsingType:NSPNGFileType properties:[NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithBool:NO], NSImageInterlaced, nil]] retain];
-	
+
 	NSString *cczPath	= [[filePath stringByDeletingPathExtension] stringByAppendingPathExtension:@"pvr.ccz"];
 	if(![data writeToFile:cczPath atomically:YES]){
 		NSLog(@"Failed to write output image %@", cczPath);
 		[data release];
 		return 0;
 	}
-	
+
 	[data release];
 	return 1;
 }
@@ -407,8 +407,8 @@ NSString *POTImageDidFinishNotification = @"POTImageDidFinishNotification";
 - (id)initWithPath:(NSString *)path
 {
 	self = [super init];
-    loadPath = [path retain];
-    return self;
+	loadPath = [path retain];
+	return self;
 }
 
 // -------------------------------------------------------------------------------
@@ -416,8 +416,8 @@ NSString *POTImageDidFinishNotification = @"POTImageDidFinishNotification";
 // -------------------------------------------------------------------------------
 - (void)dealloc
 {
-    [loadPath release];
-    [super dealloc];
+	[loadPath release];
+	[super dealloc];
 }
 
 // -------------------------------------------------------------------------------
@@ -427,54 +427,54 @@ NSString *POTImageDidFinishNotification = @"POTImageDidFinishNotification";
 // -------------------------------------------------------------------------------
 - (BOOL)isImageFile:(NSString *)filePath
 {
-    BOOL isImageFile = NO;
-    FSRef fileRef;
-    Boolean isDirectory;
-	
-    if (FSPathMakeRef((const UInt8 *)[filePath fileSystemRepresentation], &fileRef, &isDirectory) == noErr)
-    {
-        // get the content type (UTI) of this file
-        CFDictionaryRef values = NULL;
-        CFStringRef attrs[1] = { kLSItemContentType };
-        CFArrayRef attrNames = CFArrayCreate(NULL, (const void **)attrs, 1, NULL);
-		
-        if (LSCopyItemAttributes(&fileRef, kLSRolesViewer, attrNames, &values) == noErr)
-        {
-            // verify that this is a file that the Image I/O framework supports
-            if (values != NULL)
-            {
-                CFTypeRef uti = (CFStringRef)CFDictionaryGetValue(values, kLSItemContentType);
-                if (uti != NULL)
-                {
-                    CFArrayRef supportedTypes = CGImageSourceCopyTypeIdentifiers();
-                    CFIndex i, typeCount = CFArrayGetCount(supportedTypes);
-					
-                    for (i = 0; i < typeCount; i++)
-                    {
-                        CFStringRef supportedUTI = (CFStringRef)CFArrayGetValueAtIndex(supportedTypes, i);
-						
-                        // make sure the supported UTI conforms only to "public.image" (this will skip PDF)
-                        if (UTTypeConformsTo(supportedUTI, CFSTR("public.image")))
-                        {
-                            if (UTTypeConformsTo((CFStringRef)uti, supportedUTI))
-                            {
-                                isImageFile = YES;
-                                break;
-                            }
-                        }
-                    }
-					
-                    CFRelease(supportedTypes);
-                }
-				
-                CFRelease(values);
-            }
-        }
-		
-        CFRelease(attrNames);
-    }
-	
-    return isImageFile;
+	BOOL isImageFile = NO;
+	FSRef fileRef;
+	Boolean isDirectory;
+
+	if (FSPathMakeRef((const UInt8 *)[filePath fileSystemRepresentation], &fileRef, &isDirectory) == noErr)
+	{
+		// get the content type (UTI) of this file
+		CFDictionaryRef values = NULL;
+		CFStringRef attrs[1] = { kLSItemContentType };
+		CFArrayRef attrNames = CFArrayCreate(NULL, (const void **)attrs, 1, NULL);
+
+		if (LSCopyItemAttributes(&fileRef, kLSRolesViewer, attrNames, &values) == noErr)
+		{
+			// verify that this is a file that the Image I/O framework supports
+			if (values != NULL)
+			{
+				CFTypeRef uti = (CFStringRef)CFDictionaryGetValue(values, kLSItemContentType);
+				if (uti != NULL)
+				{
+					CFArrayRef supportedTypes = CGImageSourceCopyTypeIdentifiers();
+					CFIndex i, typeCount = CFArrayGetCount(supportedTypes);
+
+					for (i = 0; i < typeCount; i++)
+					{
+						CFStringRef supportedUTI = (CFStringRef)CFArrayGetValueAtIndex(supportedTypes, i);
+
+						// make sure the supported UTI conforms only to "public.image" (this will skip PDF)
+						if (UTTypeConformsTo(supportedUTI, CFSTR("public.image")))
+						{
+							if (UTTypeConformsTo((CFStringRef)uti, supportedUTI))
+							{
+								isImageFile = YES;
+								break;
+							}
+						}
+					}
+
+					CFRelease(supportedTypes);
+				}
+
+				CFRelease(values);
+			}
+		}
+
+		CFRelease(attrNames);
+	}
+
+	return isImageFile;
 }
 
 // -------------------------------------------------------------------------------
@@ -489,7 +489,7 @@ NSString *POTImageDidFinishNotification = @"POTImageDidFinishNotification";
 -(void)main
 {
 	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-	
+
 	if (![self isCancelled])
 	{
 		// test to see if it's an image file
@@ -516,9 +516,9 @@ NSString *POTImageDidFinishNotification = @"POTImageDidFinishNotification";
 								NSDateFormatter* formatter = [[[NSDateFormatter alloc] init] autorelease];
 								[formatter setTimeStyle:NSDateFormatterNoStyle];
 								[formatter setDateStyle:NSDateFormatterShortStyle];
-								
+
 								NSString *modDateStr = [formatter stringFromDate:(NSDate*)dateRef];
-								
+
 								NSDictionary *info = [NSDictionary dictionaryWithObjectsAndKeys:
 													  [loadPath lastPathComponent], @"name",
 													  [loadPath stringByDeletingLastPathComponent], @"path",
@@ -526,18 +526,18 @@ NSString *POTImageDidFinishNotification = @"POTImageDidFinishNotification";
 													  [NSString stringWithFormat:@"%ld", catInfo.dataPhysicalSize], @"size",
 													  [NSNumber numberWithInt:padImageFilePOT(loadPath)], @"result",
 													  nil];
-								
+
 								NSLog(@"Image processed: %@ result: %d", [info objectForKey:@"name"], [[info objectForKey:@"result"] intValue]);
 							}
-							
+
 							CFRelease(dateRef);
 						}
 					}
-				}		
+				}
 			}
 		}
 	}
-	
+
 	[pool release];
 }
 
